@@ -1,171 +1,272 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="it" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Wallet</title>
-    <!-- Tailwind CSS Play CDN -->
+    <title>SMART WALLET // J.A.R.V.I.S. HUD</title>
+    <!-- Google Fonts: Orbitron (HUD), JetBrains Mono (Numeri), Inter (Testo) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&family=Orbitron:wght@600;800&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Manifest per PWA -->
-    <link rel="manifest" href="data:application/json;charset=utf-8,{
-      %22name%22: %22Smart Wallet%22,
-      %22short_name%22: %22Spese%22,
-      %22start_url%22: %22.%22,
-      %22display%22: %22standalone%22,
-      %22background_color%22: %22%23f3f4f6%22,
-      %22theme_color%22: %22%234f46e5%22
-    }">
-    <meta name="theme-color" content="#4f46e5">
+    <!-- Chart.js per Grafico Olografico -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta name="theme-color" content="#060b14">
     <script>
-        tailwind.config = { corePlugins: { preflight: true } }
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        hud: ['Orbitron', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
         const originalWarn = console.warn;
         console.warn = function(...args) {
-            if (args[0] && typeof args[0] === 'string' && args[0].includes('tailwindcss.com should not be used in production')) return;
+            if (args[0] && typeof args[0] === 'string' && args[0].includes('tailwindcss.com')) return;
             originalWarn.apply(console, args);
         };
     </script>
+    <style>
+        body {
+            background-color: #060b14;
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(6, 182, 212, 0.12) 0%, transparent 60%),
+                linear-gradient(rgba(6, 182, 212, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(6, 182, 212, 0.03) 1px, transparent 1px);
+            background-size: 100% 100%, 24px 24px, 24px 24px;
+            color: #e2e8f0;
+        }
+        .hud-panel {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(6, 182, 212, 0.22);
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.05), inset 0 0 15px rgba(6, 182, 212, 0.03);
+        }
+        .hud-panel-amber {
+            background: rgba(24, 19, 10, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+        .arc-glow {
+            box-shadow: 0 0 12px rgba(6, 182, 212, 0.6);
+        }
+        .stealth-blur {
+            filter: blur(8px);
+            user-select: none;
+            transition: filter 0.25s ease;
+        }
+        /* Scrollbar minimalista */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #060b14; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+    </style>
 </head>
-<body class="bg-gray-100 text-gray-800 font-sans antialiased min-h-screen flex flex-col justify-between">
+<body class="font-sans antialiased min-h-screen flex flex-col justify-between">
 
     <!-- CONTENITORE PRINCIPALE -->
     <div id="app" class="max-w-md mx-auto w-full p-4 flex-1 flex flex-col justify-between">
 
         <!-- 1. SCHERMATA LOGIN / SELEZIONE PROFILO -->
         <div id="login-screen" class="flex flex-col justify-center flex-1 py-8">
-            <div class="text-center mb-8">
-                <h1 class="text-3xl font-bold text-indigo-600">Smart Wallet</h1>
-                <p class="text-sm text-gray-500 mt-1">Seleziona il tuo account per accedere</p>
+            <div class="text-center mb-10">
+                <div class="w-16 h-16 mx-auto mb-4 rounded-full border-2 border-cyan-400 flex items-center justify-center arc-glow bg-cyan-950/40">
+                    <div class="w-8 h-8 rounded-full bg-cyan-400 animate-pulse"></div>
+                </div>
+                <h1 class="text-2xl font-hud font-extrabold tracking-widest text-cyan-400 uppercase">Smart Wallet</h1>
+                <p class="text-[11px] font-mono text-cyan-500/70 tracking-widest uppercase mt-1">Stark Financial OS // v3.0</p>
             </div>
             <div id="profiles-container" class="space-y-3">
-                <p class="text-center text-xs text-gray-400">Caricamento profili...</p>
+                <p class="text-center text-xs font-mono text-cyan-500/60 animate-pulse">Inizializzazione protocolli Supabase...</p>
             </div>
         </div>
 
         <!-- MODALE INSERIMENTO PIN -->
-        <div id="pin-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div class="bg-white rounded-2xl p-6 w-full max-w-xs shadow-xl text-center">
-                <h3 id="pin-title" class="text-lg font-bold text-gray-700 mb-2">Inserisci PIN</h3>
-                <p class="text-xs text-gray-400 mb-4">Digita il PIN a 4 cifre del profilo</p>
+        <div id="pin-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div class="hud-panel rounded-2xl p-6 w-full max-w-xs text-center">
+                <span class="text-[10px] font-mono text-cyan-400 uppercase tracking-widest">Autenticazione Biometrica / PIN</span>
+                <h3 id="pin-title" class="text-lg font-hud font-bold text-white mt-1 mb-4">Profilo</h3>
                 <input type="password" id="pin-input" maxlength="4" inputmode="numeric" 
                     onkeydown="if(event.key === 'Enter') verifyPin()"
-                    class="w-full text-center text-2xl tracking-widest border border-gray-300 rounded-xl p-3 mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="••••">
+                    class="w-full bg-slate-900/90 text-cyan-400 font-mono text-center text-2xl tracking-[0.5em] border border-cyan-500/40 rounded-xl p-3 mb-5 focus:outline-none focus:border-cyan-400 arc-glow" placeholder="••••">
                 <div class="flex space-x-2">
-                    <button onclick="closePinModal()" class="w-1/2 bg-gray-200 text-gray-700 py-3 rounded-xl font-medium">Annulla</button>
-                    <button onclick="verifyPin()" class="w-1/2 bg-indigo-600 text-white py-3 rounded-xl font-medium">Entra</button>
+                    <button onclick="closePinModal()" class="w-1/2 bg-slate-800 hover:bg-slate-700 text-slate-300 py-3 rounded-xl text-xs font-mono uppercase tracking-wider transition">Annulla</button>
+                    <button onclick="verifyPin()" class="w-1/2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 py-3 rounded-xl text-xs font-hud font-bold uppercase tracking-wider arc-glow transition">Autorizza</button>
                 </div>
             </div>
         </div>
 
         <!-- 2. DASHBOARD PRINCIPALE -->
-        <div id="dashboard-screen" class="hidden flex-1 flex flex-col pb-6">
-            <!-- Header -->
-            <div class="flex justify-between items-center mb-4 pt-2">
-                <div>
-                    <span class="text-xs text-gray-500 uppercase tracking-wider">Profilo Attivo</span>
-                    <h2 id="current-profile-name" class="text-xl font-bold text-gray-900">Nome Account</h2>
+        <div id="dashboard-screen" class="hidden flex-1 flex flex-col pb-4 space-y-3.5">
+            
+            <!-- Header HUD -->
+            <div class="hud-panel rounded-2xl p-3.5 flex justify-between items-center">
+                <div class="flex items-center space-x-2.5">
+                    <div class="w-3 h-3 rounded-full bg-cyan-400 arc-glow animate-pulse" title="Database Online"></div>
+                    <div>
+                        <span class="text-[9px] font-mono text-cyan-400 uppercase tracking-widest block">Operatore Attivo</span>
+                        <h2 id="current-profile-name" class="text-base font-hud font-bold text-white leading-tight">Utente</h2>
+                    </div>
                 </div>
-                <button onclick="logout()" class="text-sm bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1.5 rounded-lg font-medium transition">Esci</button>
-            </div>
-
-            <!-- Box Finanziario: Residuo & Previsione -->
-            <div class="grid grid-cols-2 gap-3 mb-4">
-                <div class="bg-gradient-to-br from-indigo-600 to-indigo-800 text-white p-4 rounded-2xl shadow-lg">
-                    <span class="text-xs opacity-80 uppercase tracking-wider">Residuo Attuale</span>
-                    <h3 id="total-balance" class="text-2xl font-black mt-1">€ 0.00</h3>
-                </div>
-                <div class="bg-gradient-to-br from-emerald-600 to-teal-700 text-white p-4 rounded-2xl shadow-lg">
-                    <span class="text-xs opacity-80 uppercase tracking-wider">Stima Fine Mese</span>
-                    <h3 id="forecast-balance" class="text-2xl font-black mt-1">€ 0.00</h3>
+                <div class="flex items-center space-x-1.5">
+                    <button onclick="toggleStealth()" id="stealth-btn" title="Stealth Privacy Mode" class="bg-slate-800/80 hover:bg-cyan-950 border border-cyan-500/30 text-cyan-400 px-2.5 py-1.5 rounded-lg text-xs transition">👁️</button>
+                    <button onclick="exportCSV()" title="Esporta CSV per Excel" class="bg-slate-800/80 hover:bg-cyan-950 border border-cyan-500/30 text-cyan-400 px-2.5 py-1.5 rounded-lg text-xs font-mono transition">📥 CSV</button>
+                    <button onclick="logout()" class="bg-rose-950/60 hover:bg-rose-900/80 border border-rose-500/30 text-rose-300 px-2.5 py-1.5 rounded-lg text-xs font-mono uppercase transition">Esci</button>
                 </div>
             </div>
 
-            <!-- BOX DEI CONSIGLI (Assistente) -->
-            <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-4 shadow-sm flex items-start space-x-3">
-                <div class="text-2xl">💡</div>
+            <!-- Filtro Temporale Mensile -->
+            <div class="flex items-center justify-between hud-panel rounded-xl px-3.5 py-2">
+                <span class="text-[11px] font-mono text-cyan-400 uppercase tracking-wider">📅 Finestra Temporale:</span>
+                <select id="month-filter" onchange="applyFilters()" class="bg-slate-900 border border-cyan-500/30 text-slate-200 text-xs font-mono rounded-lg px-2.5 py-1 focus:outline-none focus:border-cyan-400">
+                    <option value="ALL">Tutti i periodi</option>
+                </select>
+            </div>
+
+            <!-- Telemetria Finanziaria: Saldo Globale & Flusso Mensile -->
+            <div class="grid grid-cols-2 gap-3">
+                <div class="hud-panel p-4 rounded-2xl relative overflow-hidden">
+                    <div class="absolute -right-4 -top-4 w-16 h-16 bg-cyan-500/10 rounded-full blur-xl"></div>
+                    <span class="text-[10px] font-mono text-cyan-400/80 uppercase tracking-widest">Saldo Totale</span>
+                    <h3 id="total-balance" class="sensitive-data text-xl font-mono font-bold text-white mt-1">€ 0.00</h3>
+                    <span id="period-flow" class="sensitive-data text-[10px] font-mono text-slate-400 mt-1 block">Mese: € 0.00</span>
+                </div>
+                <div class="hud-panel p-4 rounded-2xl relative overflow-hidden">
+                    <div class="absolute -right-4 -top-4 w-16 h-16 bg-emerald-500/10 rounded-full blur-xl"></div>
+                    <span class="text-[10px] font-mono text-emerald-400/80 uppercase tracking-widest">Proiezione Fine Mese</span>
+                    <h3 id="forecast-balance" class="sensitive-data text-xl font-mono font-bold text-emerald-400 mt-1">€ 0.00</h3>
+                    <span id="daily-burn" class="sensitive-data text-[10px] font-mono text-slate-400 mt-1 block">Burn rate: € 0/gg</span>
+                </div>
+            </div>
+
+            <!-- Funzione Extra 1: Telemetria Budget Mensile (Reattore) -->
+            <div class="hud-panel rounded-2xl p-3.5">
+                <div class="flex justify-between items-center mb-1.5">
+                    <span class="text-[10px] font-mono text-cyan-400 uppercase tracking-widest">⚡ Energia Budget Mensile</span>
+                    <button onclick="configureBudget()" class="text-[10px] font-mono text-amber-400 hover:underline">
+                        Tetto: <span id="budget-limit-label" class="sensitive-data">€ 1000</span> ⚙️
+                    </button>
+                </div>
+                <div class="w-full bg-slate-900 h-2.5 rounded-full overflow-hidden border border-slate-700/60">
+                    <div id="budget-bar" class="bg-cyan-400 h-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+                <div class="flex justify-between text-[10px] font-mono text-slate-400 mt-1">
+                    <span id="budget-spent-label" class="sensitive-data">Speso: € 0.00</span>
+                    <span id="budget-percent-label">0% utilizzato</span>
+                </div>
+            </div>
+
+            <!-- J.A.R.V.I.S. AI Diagnostic Box -->
+            <div class="hud-panel-amber rounded-2xl p-3.5 flex items-start space-x-3">
+                <div class="text-lg mt-0.5">🤖</div>
                 <div>
-                    <h4 class="text-sm font-bold text-amber-800">Box Consigli Smart</h4>
-                    <p id="ai-advice-text" class="text-xs text-amber-700 mt-1">Analisi in corso dei movimenti...</p>
+                    <h4 class="text-[10px] font-hud font-bold text-amber-400 uppercase tracking-widest">J.A.R.V.I.S. Financial Diagnostics</h4>
+                    <p id="ai-advice-text" class="text-xs text-amber-200/90 mt-0.5 leading-relaxed">Acquisizione telemetria in corso...</p>
+                </div>
+            </div>
+
+            <!-- Grafico a Barre Orizzontali (Spese per Categoria) -->
+            <div class="hud-panel rounded-2xl p-4">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="text-[10px] font-hud font-bold text-cyan-400 uppercase tracking-widest">📊 Analisi Vettoriale Uscite</h3>
+                    <span class="text-[10px] font-mono text-slate-400">Ordinate per impatto</span>
+                </div>
+                <div class="relative h-40 w-full">
+                    <canvas id="expensesChart"></canvas>
                 </div>
             </div>
 
             <!-- Pulsanti Azione Rapida -->
-            <div class="grid grid-cols-2 gap-2 mb-4">
-                <button onclick="openModal('income')" class="bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl text-sm font-semibold shadow transition">+ Aggiungi Entrata</button>
-                <button onclick="openModal('expense')" class="bg-rose-600 hover:bg-rose-700 text-white py-2.5 rounded-xl text-sm font-semibold shadow transition">- Aggiungi Uscita</button>
+            <div class="grid grid-cols-2 gap-2.5">
+                <button onclick="openModal('income')" class="bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/50 text-emerald-300 py-2.5 rounded-xl text-xs font-hud font-bold uppercase tracking-wider shadow transition">+ Entrata</button>
+                <button onclick="openModal('expense')" class="bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/50 text-rose-300 py-2.5 rounded-xl text-xs font-hud font-bold uppercase tracking-wider shadow transition">- Uscita</button>
             </div>
 
-            <!-- Ricerca e Filtri -->
-            <div class="mb-3">
-                <input type="text" id="search-input" oninput="filterMovements()" placeholder="Cerca per categoria o nota..." class="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm">
+            <!-- Ricerca Testuale -->
+            <div>
+                <input type="text" id="search-input" oninput="applyFilters()" placeholder="🔍 Scansiona database per categoria o nota..." class="w-full bg-slate-900/90 border border-cyan-500/30 rounded-xl px-3.5 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-400 font-mono">
             </div>
 
             <!-- Lista Cronologica Movimenti -->
-            <div class="bg-white rounded-2xl p-4 shadow-sm flex-1 flex flex-col justify-between">
+            <div class="hud-panel rounded-2xl p-4 flex-1 flex flex-col justify-between">
                 <div>
-                    <h3 class="text-sm font-bold text-gray-700 mb-3">Ultimi Movimenti</h3>
-                    <div id="movements-list" class="space-y-1 divide-y divide-gray-100">
-                        <!-- Movimenti inseriti qui via JS -->
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-[10px] font-hud font-bold text-cyan-400 uppercase tracking-widest">Registro Operazioni</h3>
+                        <span id="records-count" class="text-[10px] font-mono text-slate-400">0 record</span>
+                    </div>
+                    <div id="movements-list" class="space-y-1 divide-y divide-slate-800/80">
+                        <!-- Movimenti via JS -->
                     </div>
                 </div>
 
-                <!-- Paginazione (10 elementi per pagina) -->
-                <div class="flex justify-between items-center mt-4 pt-3 border-t border-gray-100">
-                    <button onclick="changePage(-1)" id="prev-btn" class="text-xs bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg font-medium disabled:opacity-40">← Recenti</button>
-                    <span id="page-info" class="text-xs text-gray-400">Pagina 1</span>
-                    <button onclick="changePage(1)" id="next-btn" class="text-xs bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg font-medium disabled:opacity-40">Più vecchi →</button>
+                <!-- Paginazione -->
+                <div class="flex justify-between items-center mt-4 pt-3 border-t border-slate-800">
+                    <button onclick="changePage(-1)" id="prev-btn" class="text-[11px] font-mono bg-slate-800 text-cyan-400 px-3 py-1 rounded-lg disabled:opacity-30">← PREC</button>
+                    <span id="page-info" class="text-[11px] font-mono text-slate-400">PAG 1</span>
+                    <button onclick="changePage(1)" id="next-btn" class="text-[11px] font-mono bg-slate-800 text-cyan-400 px-3 py-1 rounded-lg disabled:opacity-30">SUCC →</button>
                 </div>
             </div>
         </div>
 
         <!-- MODALE AGGIUNGI / MODIFICA MOVIMENTO -->
-        <div id="movement-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div class="bg-white rounded-2xl p-6 w-full max-w-xs shadow-xl">
-                <h3 id="modal-title" class="text-lg font-bold text-gray-800 mb-4">Nuovo Movimento</h3>
+        <div id="movement-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div class="hud-panel rounded-2xl p-6 w-full max-w-xs">
+                <h3 id="modal-title" class="text-sm font-hud font-bold text-cyan-400 uppercase tracking-wider mb-4">Nuovo Movimento</h3>
                 <form id="movement-form" onsubmit="saveMovement(event)">
                     <input type="hidden" id="mov-id">
                     <input type="hidden" id="mov-type">
                     
-                    <div class="mb-3">
-                        <label class="block text-xs font-semibold text-gray-500 mb-1">Importo (€)</label>
-                        <input type="number" step="0.01" min="0.01" id="mov-amount" required class="w-full border border-gray-300 rounded-xl p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="0.00">
+                    <div class="grid grid-cols-2 gap-2 mb-3">
+                        <div>
+                            <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Importo (€)</label>
+                            <input type="number" step="0.01" min="0.01" id="mov-amount" required class="w-full bg-slate-900 border border-cyan-500/30 rounded-xl p-2.5 text-sm font-mono text-white focus:outline-none focus:border-cyan-400" placeholder="0.00">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Data</label>
+                            <input type="date" id="mov-date" required class="w-full bg-slate-900 border border-cyan-500/30 rounded-xl p-2.5 text-xs font-mono text-white focus:outline-none focus:border-cyan-400">
+                        </div>
                     </div>
                     
                     <div id="category-group" class="mb-3">
-                        <label class="block text-xs font-semibold text-gray-500 mb-1">Categoria</label>
-                        <select id="mov-category" class="w-full border border-gray-300 rounded-xl p-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                            <option value="GPL">🚗 GPL</option>
+                        <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Settore / Categoria</label>
+                        <select id="mov-category" class="w-full bg-slate-900 border border-cyan-500/30 rounded-xl p-2.5 text-xs font-mono text-white focus:outline-none focus:border-cyan-400">
+                            <option value="GPL">🚗 GPL / Carburante</option>
                             <option value="Alimentari">🛒 Alimentari</option>
-                            <option value="Casa">🏠 Casa</option>
-                            <option value="Svago">🎉 Svago</option>
+                            <option value="Casa">🏠 Casa & Utenze</option>
+                            <option value="Svago">🎉 Svago & Extra</option>
                             <option value="Trasporti">🚆 Trasporti</option>
                             <option value="Altro">📦 Altro</option>
                         </select>
                     </div>
                     
-                    <div class="mb-4">
-                        <label class="block text-xs font-semibold text-gray-500 mb-1">Nota / Descrizione</label>
-                        <input type="text" id="mov-note" class="w-full border border-gray-300 rounded-xl p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Es. Pieno Eni o Stipendio">
+                    <div class="mb-5">
+                        <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Nota Operativa</label>
+                        <input type="text" id="mov-note" class="w-full bg-slate-900 border border-cyan-500/30 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-cyan-400" placeholder="Es. Rifornimento o Stipendio">
                     </div>
                     
                     <div class="flex space-x-2">
-                        <button type="button" onclick="closeModal()" class="w-1/2 bg-gray-200 text-gray-700 py-3 rounded-xl text-sm font-medium">Annulla</button>
-                        <button type="submit" id="save-btn" class="w-1/2 bg-indigo-600 text-white py-3 rounded-xl text-sm font-medium">Salva</button>
+                        <button type="button" onclick="closeModal()" class="w-1/2 bg-slate-800 text-slate-300 py-2.5 rounded-xl text-xs font-mono uppercase">Annulla</button>
+                        <button type="submit" id="save-btn" class="w-1/2 bg-cyan-500 text-slate-950 py-2.5 rounded-xl text-xs font-hud font-bold uppercase arc-glow">Registra</button>
                     </div>
                 </form>
             </div>
         </div>
 
         <!-- Footer -->
-        <div class="text-center py-2 text-xs text-gray-400">
-            Smart Wallet Web App
+        <div class="text-center py-2 text-[10px] font-mono text-slate-600 tracking-widest uppercase">
+            STARK INDUSTRIES // PERSONAL TELEMETRY HUD
         </div>
     </div>
 
-    <!-- SCRIPT LOGICA E CONNESSIONE SUPABASE -->
+    <!-- LOGICA JAVASCRIPT & SUPABASE -->
     <script>
-        // CONFIGURAZIONE SUPABASE (URL corretto senza /rest/v1/)
         const SUPABASE_URL = 'https://vrxzuwzjvluzdtbnrvfe.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZyeHp1d3pqdmx1emR0Ym5ydmZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI0MTY5NTgsImV4cCI6MjEwNzk5Mjk1OH0._mNWpw3OM9fW_8xDfIqe-wob0j93ifHl9Qo8OTfSvpY';
         
@@ -178,32 +279,31 @@
         let currentPage = 1;
         const itemsPerPage = 10;
         let selectedProfileForPin = null;
+        let chartInstance = null;
+        let isStealth = false;
 
         async function initApp() {
             const container = document.getElementById('profiles-container');
             const { data, error } = await supabaseClient.from('profiles').select('*').order('id');
             
             if (error) {
-                container.innerHTML = `<p class="text-center text-xs text-rose-600 font-medium">Errore di connessione a Supabase. Verifica le tabelle e le chiavi.</p>`;
-                console.error(error);
+                container.innerHTML = `<p class="text-center text-xs font-mono text-rose-500">ERRORE CRITICO SUPABASE: Verifica connessione.</p>`;
                 return;
             }
             
             profilesList = data || [];
             container.innerHTML = '';
             
-            if (profilesList.length === 0) {
-                container.innerHTML = `<p class="text-center text-xs text-gray-500">Nessun profilo trovato nel database.</p>`;
-                return;
-            }
-
             profilesList.forEach(profile => {
                 const btn = document.createElement('button');
-                btn.className = "w-full bg-white border border-gray-200 p-4 rounded-2xl shadow-sm flex justify-between items-center hover:border-indigo-500 transition";
+                btn.className = "w-full hud-panel p-4 rounded-2xl flex justify-between items-center hover:border-cyan-400 transition group";
                 btn.onclick = () => promptPin(profile.id);
                 btn.innerHTML = `
-                    <span class="font-bold text-gray-700">${escapeHtml(profile.account_name)}</span>
-                    <span class="text-indigo-600 text-sm font-medium">Accedi →</span>
+                    <div class="flex items-center space-x-3">
+                        <div class="w-2 h-2 rounded-full bg-cyan-400 group-hover:scale-125 transition"></div>
+                        <span class="font-hud font-bold text-slate-100 tracking-wide">${escapeHtml(profile.account_name)}</span>
+                    </div>
+                    <span class="text-cyan-400 text-xs font-mono">ACCEDI →</span>
                 `;
                 container.appendChild(btn);
             });
@@ -212,9 +312,8 @@
         function promptPin(profileId) {
             const profile = profilesList.find(p => p.id === profileId);
             if (!profile) return;
-
             selectedProfileForPin = profile;
-            document.getElementById('pin-title').innerText = `PIN per ${profile.account_name}`;
+            document.getElementById('pin-title').innerText = profile.account_name.toUpperCase();
             document.getElementById('pin-input').value = '';
             document.getElementById('pin-modal').classList.remove('hidden');
             document.getElementById('pin-input').focus();
@@ -231,7 +330,7 @@
                 closePinModal();
                 loadDashboard();
             } else {
-                alert('PIN errato!');
+                alert('ACCESSO NEGATO: Codice PIN non valido.');
                 document.getElementById('pin-input').value = '';
                 document.getElementById('pin-input').focus();
             }
@@ -245,6 +344,29 @@
             initApp();
         }
 
+        // STEALTH PRIVACY MODE
+        function toggleStealth() {
+            isStealth = !isStealth;
+            document.querySelectorAll('.sensitive-data').forEach(el => {
+                el.classList.toggle('stealth-blur', isStealth);
+            });
+            document.getElementById('stealth-btn').innerText = isStealth ? '🙈' : '👁️';
+        }
+
+        // BUDGET CONFIGURATOR (Salva su LocalStorage per ogni profilo)
+        function getProfileBudget() {
+            return parseFloat(localStorage.getItem(`stark_budget_${currentProfile.id}`)) || 1000;
+        }
+
+        function configureBudget() {
+            const current = getProfileBudget();
+            const input = prompt("Imposta il tetto massimo di spesa mensile (€):", current);
+            if (input !== null && !isNaN(parseFloat(input)) && parseFloat(input) > 0) {
+                localStorage.setItem(`stark_budget_${currentProfile.id}`, parseFloat(input));
+                applyFilters(false);
+            }
+        }
+
         async function loadDashboard() {
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('dashboard-screen').classList.remove('hidden');
@@ -253,124 +375,251 @@
         }
 
         async function fetchMovements() {
-            const { data: incomes, error: incErr } = await supabaseClient
+            const { data: incomes } = await supabaseClient
                 .from('incomes')
                 .select('*')
                 .eq('profile_id', currentProfile.id);
 
-            const { data: expensesData, error: expErr } = await supabaseClient
+            const { data: expensesData } = await supabaseClient
                 .from('expenses')
                 .select('*')
                 .eq('profile_id', currentProfile.id);
 
-            if (incErr || expErr) {
-                console.error("Errore caricamento movimenti:", incErr || expErr);
-            }
-
             let list = [];
             if (incomes) {
-                incomes.forEach(i => list.push({ 
-                    ...i, 
-                    type: 'income', 
-                    date: i.income_date || i.created_at, 
-                    category: 'Entrata',
-                    note: i.title // Mappato correttamente da title a note
-                }));
+                incomes.forEach(i => {
+                    const rawDate = i.income_date || (i.created_at ? i.created_at.slice(0, 10) : new Date().toISOString().slice(0, 10));
+                    list.push({ ...i, type: 'income', effectiveDate: rawDate, category: 'Entrata', note: i.title });
+                });
             }
             if (expensesData) {
-                expensesData.forEach(e => list.push({ 
-                    ...e, 
-                    type: 'expense', 
-                    date: e.expense_date || e.created_at 
-                }));
+                expensesData.forEach(e => {
+                    const rawDate = e.expense_date || (e.created_at ? e.created_at.slice(0, 10) : new Date().toISOString().slice(0, 10));
+                    list.push({ ...e, type: 'expense', effectiveDate: rawDate });
+                });
             }
 
-            list.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            // Ordina per data effettiva (e created_at a parità di data)
+            list.sort((a, b) => new Date(b.effectiveDate) - new Date(a.effectiveDate) || new Date(b.created_at) - new Date(a.created_at));
             allMovements = list;
-            
-            // Mantiene il filtro attivo se presente nella barra di ricerca
-            filterMovements(false);
-            updateFinancials();
+
+            populateMonthSelector();
+            applyFilters(false);
         }
 
-        function updateFinancials() {
-            let totalIncome = 0;
-            let totalExpense = 0;
-            let currentMonthExpense = 0;
+        function populateMonthSelector() {
+            const select = document.getElementById('month-filter');
+            const previousValue = select.value;
+            const monthsSet = new Set();
 
-            const today = new Date();
-            const currentMonth = today.getMonth();
-            const currentYear = today.getFullYear();
+            // Aggiungi sempre il mese corrente
+            const currentMonthISO = new Date().toISOString().slice(0, 7);
+            monthsSet.add(currentMonthISO);
 
             allMovements.forEach(m => {
+                if (m.effectiveDate) monthsSet.add(m.effectiveDate.slice(0, 7));
+            });
+
+            const sortedMonths = Array.from(monthsSet).sort().reverse();
+            select.innerHTML = `<option value="ALL">🌐 Tutti i periodi</option>`;
+            
+            sortedMonths.forEach(ym => {
+                const [year, month] = ym.split('-');
+                const dateObj = new Date(year, parseInt(month) - 1, 1);
+                const label = dateObj.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' }).toUpperCase();
+                select.innerHTML += `<option value="${ym}">${label}</option>`;
+            });
+
+            if ( previousValue && (previousValue === 'ALL' || sortedMonths.includes(previousValue)) ) {
+                select.value = previousValue;
+            } else {
+                select.value = currentMonthISO;
+            }
+        }
+
+        function applyFilters(resetPage = true) {
+            const query = document.getElementById('search-input').value.toLowerCase().trim();
+            const selectedMonth = document.getElementById('month-filter').value;
+
+            filteredMovements = allMovements.filter(m => {
+                const matchMonth = selectedMonth === 'ALL' || (m.effectiveDate && m.effectiveDate.startsWith(selectedMonth));
+                const matchQuery = !query || 
+                    (m.category && m.category.toLowerCase().includes(query)) || 
+                    (m.note && m.note.toLowerCase().includes(query));
+                return matchMonth && matchQuery;
+            });
+
+            if (resetPage) currentPage = 1;
+            updateFinancials(selectedMonth);
+            renderChart();
+            renderMovements();
+        }
+
+        function updateFinancials(selectedMonth) {
+            // 1. Calcolo Saldo Globale Storico
+            let globalIncome = 0, globalExpense = 0;
+            allMovements.forEach(m => {
                 const amt = parseFloat(m.amount) || 0;
-                if (m.type === 'income') {
-                    totalIncome += amt;
-                } else {
-                    totalExpense += amt;
-                    const movDate = new Date(m.created_at || m.date);
-                    if (movDate.getMonth() === currentMonth && movDate.getFullYear() === currentYear) {
-                        currentMonthExpense += amt;
-                    }
+                if (m.type === 'income') globalIncome += amt;
+                else globalExpense += amt;
+            });
+            const globalBalance = globalIncome - globalExpense;
+            document.getElementById('total-balance').innerText = `€ ${globalBalance.toFixed(2)}`;
+
+            // 2. Calcolo Metriche del Periodo Selezionato
+            let periodIncome = 0, periodExpense = 0;
+            filteredMovements.forEach(m => {
+                const amt = parseFloat(m.amount) || 0;
+                if (m.type === 'income') periodIncome += amt;
+                else periodExpense += amt;
+            });
+            const periodNet = periodIncome - periodExpense;
+            const sign = periodNet >= 0 ? '+' : '';
+            document.getElementById('period-flow').innerText = `Flusso vista: ${sign}€ ${periodNet.toFixed(2)}`;
+
+            // 3. Previsione Fine Mese (basata sul mese corrente reale)
+            const today = new Date();
+            const currentMonthISO = today.toISOString().slice(0, 7);
+            let currentMonthExpense = 0;
+            allMovements.forEach(m => {
+                if (m.type === 'expense' && m.effectiveDate && m.effectiveDate.startsWith(currentMonthISO)) {
+                    currentMonthExpense += parseFloat(m.amount) || 0;
                 }
             });
 
-            const balance = totalIncome - totalExpense;
-            document.getElementById('total-balance').innerText = `€ ${balance.toFixed(2)}`;
-
             const currentDay = today.getDate();
-            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
             const daysRemaining = daysInMonth - currentDay;
+            const avgDaily = currentMonthExpense / Math.max(1, currentDay);
+            const forecast = globalBalance - (avgDaily * daysRemaining);
 
-            // Previsione basata solo sulle spese del mese corrente
-            const avgDailyExpense = currentMonthExpense / Math.max(1, currentDay);
-            const forecast = balance - (avgDailyExpense * daysRemaining);
             document.getElementById('forecast-balance').innerText = `€ ${forecast.toFixed(2)}`;
+            document.getElementById('daily-burn').innerText = `Media mese: € ${avgDaily.toFixed(1)}/gg`;
 
-            let advice = "La situazione finanziaria è stabile. Continua così!";
+            // 4. Aggiornamento Barra Budget
+            const budgetLimit = getProfileBudget();
+            const spentForBudget = selectedMonth === 'ALL' ? currentMonthExpense : periodExpense;
+            const pct = Math.min(100, Math.round((spentForBudget / budgetLimit) * 100));
+            
+            document.getElementById('budget-limit-label').innerText = `€ ${budgetLimit.toFixed(0)}`;
+            document.getElementById('budget-spent-label').innerText = `Uscite: € ${spentForBudget.toFixed(2)}`;
+            document.getElementById('budget-percent-label').innerText = `${pct}% del tetto`;
+
+            const bar = document.getElementById('budget-bar');
+            bar.style.width = `${pct}%`;
+            bar.className = `h-full transition-all duration-500 ${pct > 90 ? 'bg-rose-500' : pct > 75 ? 'bg-amber-400' : 'bg-cyan-400'}`;
+
+            // 5. Diagnostica J.A.R.V.I.S.
+            let advice = "Tutti i parametri finanziari rientrano nella norma operativa, Signore.";
             if (forecast < 0) {
-                advice = "Attenzione: la proiezione indica un saldo negativo a fine mese. Riduci le spese non essenziali!";
-            } else if (totalExpense > totalIncome && totalIncome > 0) {
-                advice = "Le uscite superano le entrate totali. Cerca di monitorare le spese per il GPL e lo svago.";
-            } else if (daysRemaining < 10 && balance > 200) {
-                advice = "Ottima gestione! Sei vicinissimo alla fine del mese con un buon margine di liquidità.";
+                advice = "⚠️ ALLERTA CRITICA: Al ritmo di spesa attuale (€ " + avgDaily.toFixed(1) + "/gg), le riserve si esauriranno prima di fine mese.";
+            } else if (pct >= 100) {
+                advice = "⚠️ Tetto budget mensile superato. Consiglio la sospensione immediata delle spese superflue.";
+            } else if (periodExpense > periodIncome && periodIncome > 0) {
+                advice = "Nota tattica: nel periodo selezionato le uscite superano le entrate di € " + (periodExpense - periodIncome).toFixed(2) + ".";
             }
             document.getElementById('ai-advice-text').innerText = advice;
+        }
+
+        // GRAFICO A BARRE ORIZZONTALI (Chart.js)
+        function renderChart() {
+            const ctx = document.getElementById('expensesChart').getContext('2d');
+            const categoryTotals = {};
+
+            filteredMovements.forEach(m => {
+                if (m.type === 'expense') {
+                    const cat = m.category || 'Altro';
+                    categoryTotals[cat] = (categoryTotals[cat] || 0) + (parseFloat(m.amount) || 0);
+                }
+            });
+
+            // Ordina categorie dalla più costosa alla meno costosa
+            const sortedEntries = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1]);
+            const labels = sortedEntries.map(e => e[0]);
+            const values = sortedEntries.map(e => e[1]);
+
+            if (chartInstance) chartInstance.destroy();
+
+            if (labels.length === 0) {
+                labels.push('Nessuna Uscita');
+                values.push(0);
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: 'rgba(6, 182, 212, 0.35)',
+                        borderColor: '#06b6d4',
+                        borderWidth: 1.5,
+                        borderRadius: 6,
+                        barThickness: 16
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => ` € ${ctx.raw.toFixed(2)}`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(148, 163, 184, 0.08)' },
+                            ticks: { color: '#64748b', font: { family: 'JetBrains Mono', size: 10 } }
+                        },
+                        y: {
+                            grid: { display: false },
+                            ticks: { color: '#e2e8f0', font: { family: 'JetBrains Mono', size: 11 } }
+                        }
+                    }
+                }
+            });
         }
 
         function renderMovements() {
             const listEl = document.getElementById('movements-list');
             listEl.innerHTML = '';
+            document.getElementById('records-count').innerText = `${filteredMovements.length} op.`;
 
             const start = (currentPage - 1) * itemsPerPage;
             const end = start + itemsPerPage;
             const paginatedItems = filteredMovements.slice(start, end);
 
             if (paginatedItems.length === 0) {
-                listEl.innerHTML = `<p class="text-xs text-gray-400 text-center py-4">Nessun movimento trovato.</p>`;
+                listEl.innerHTML = `<p class="text-xs font-mono text-slate-500 text-center py-6">Nessun record rilevato nel settore.</p>`;
             } else {
                 paginatedItems.forEach(m => {
                     const isIncome = m.type === 'income';
                     const sign = isIncome ? '+' : '-';
-                    const colorClass = isIncome ? 'text-emerald-600' : 'text-gray-800';
-                    const dateFormatted = m.created_at 
-                        ? new Date(m.created_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' }) 
+                    const colorClass = isIncome ? 'text-emerald-400' : 'text-rose-400';
+                    const badgeClass = isIncome ? 'text-emerald-400 border-emerald-500/30 bg-emerald-950/40' : 'text-cyan-400 border-cyan-500/30 bg-cyan-950/40';
+                    
+                    const dateFormatted = m.effectiveDate 
+                        ? new Date(m.effectiveDate).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: '2-digit' }) 
                         : '';
 
                     const itemDiv = document.createElement('div');
                     itemDiv.className = "flex justify-between items-center py-2.5";
                     itemDiv.innerHTML = `
                         <div class="pr-2">
-                            <div class="flex items-center space-x-1.5">
-                                <span class="text-xs font-bold ${isIncome ? 'text-emerald-600' : 'text-indigo-600'} uppercase">${escapeHtml(m.category)}</span>
-                                <span class="text-[10px] text-gray-400">• ${dateFormatted}</span>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded border ${badgeClass} uppercase">${escapeHtml(m.category)}</span>
+                                <span class="text-[10px] font-mono text-slate-500">${dateFormatted}</span>
                             </div>
-                            <p class="text-xs text-gray-600 break-all">${escapeHtml(m.note || (isIncome ? 'Entrata' : 'Spesa'))}</p>
+                            <p class="text-xs text-slate-300 mt-1 break-all">${escapeHtml(m.note || (isIncome ? 'Accredito' : 'Addebito'))}</p>
                         </div>
-                        <div class="flex items-center space-x-2 shrink-0">
-                            <span class="text-sm font-bold ${colorClass}">${sign}€ ${parseFloat(m.amount).toFixed(2)}</span>
-                            <button onclick="openEditModal('${m.type}', ${m.id})" title="Modifica" class="text-xs bg-gray-100 hover:bg-indigo-100 text-gray-600 hover:text-indigo-600 p-1.5 rounded-lg transition">✏️</button>
-                            <button onclick="deleteMovement('${m.type}', ${m.id})" title="Elimina" class="text-xs bg-gray-100 hover:bg-rose-100 text-gray-600 hover:text-rose-600 p-1.5 rounded-lg transition">🗑️</button>
+                        <div class="flex items-center space-x-1.5 shrink-0">
+                            <span class="sensitive-data text-sm font-mono font-bold ${colorClass} mr-1 ${isStealth ? 'stealth-blur' : ''}">${sign}€ ${parseFloat(m.amount).toFixed(2)}</span>
+                            <button onclick="openEditModal('${m.type}', ${m.id})" title="Modifica" class="text-xs bg-slate-800/80 hover:bg-cyan-950 text-slate-300 hover:text-cyan-400 p-1.5 rounded-lg border border-slate-700 transition">✏️</button>
+                            <button onclick="deleteMovement('${m.type}', ${m.id})" title="Elimina" class="text-xs bg-slate-800/80 hover:bg-rose-950 text-slate-300 hover:text-rose-400 p-1.5 rounded-lg border border-slate-700 transition">🗑️</button>
                         </div>
                     `;
                     listEl.appendChild(itemDiv);
@@ -378,7 +627,7 @@
             }
 
             const totalPages = Math.max(1, Math.ceil(filteredMovements.length / itemsPerPage));
-            document.getElementById('page-info').innerText = `Pagina ${currentPage} di ${totalPages}`;
+            document.getElementById('page-info').innerText = `PAG ${currentPage}/${totalPages}`;
             document.getElementById('prev-btn').disabled = currentPage === 1;
             document.getElementById('next-btn').disabled = end >= filteredMovements.length;
         }
@@ -388,38 +637,58 @@
             renderMovements();
         }
 
-        function filterMovements(resetPage = true) {
-            const query = document.getElementById('search-input').value.toLowerCase().trim();
-            filteredMovements = allMovements.filter(m => 
-                (m.category && m.category.toLowerCase().includes(query)) || 
-                (m.note && m.note.toLowerCase().includes(query))
-            );
-            if (resetPage) currentPage = 1;
-            renderMovements();
+        // ESPORTAZIONE EXCEL / CSV
+        function exportCSV() {
+            if (filteredMovements.length === 0) {
+                alert("Nessun movimento da esportare nel periodo selezionato.");
+                return;
+            }
+
+            // BOM UTF-8 (\uFEFF) + punto e virgola per compatibilità nativa con Excel Italiano
+            let csvContent = "\uFEFFData;Tipo;Categoria;Descrizione;Importo (€)\n";
+
+            filteredMovements.forEach(m => {
+                const date = m.effectiveDate || '';
+                const tipo = m.type === 'income' ? 'Entrata' : 'Uscita';
+                const cat = (m.category || '').replace(/;/g, ',');
+                const note = (m.note || '').replace(/;/g, ',').replace(/\r?\n|\r/g, ' ');
+                const amount = (m.type === 'income' ? '' : '-') + parseFloat(m.amount).toFixed(2).replace('.', ',');
+                csvContent += `${date};${tipo};${cat};${note};${amount}\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            const period = document.getElementById('month-filter').value;
+            link.setAttribute('href', url);
+            link.setAttribute('download', `SmartWallet_${currentProfile.account_name}_${period}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
-        // APERTURA MODALE PER NUOVO MOVIMENTO
         function openModal(type) {
             document.getElementById('mov-id').value = '';
             document.getElementById('mov-type').value = type;
-            document.getElementById('modal-title').innerText = type === 'income' ? 'Aggiungi Entrata' : 'Aggiungi Uscita';
+            document.getElementById('modal-title').innerText = type === 'income' ? '// REGISTRA ENTRATA' : '// REGISTRA USCITA';
             document.getElementById('category-group').style.display = type === 'income' ? 'none' : 'block';
             document.getElementById('mov-amount').value = '';
             document.getElementById('mov-note').value = '';
+            document.getElementById('mov-date').value = new Date().toISOString().slice(0, 10);
             document.getElementById('movement-modal').classList.remove('hidden');
             document.getElementById('mov-amount').focus();
         }
 
-        // APERTURA MODALE PER MODIFICA MOVIMENTO ESISTENTE
         function openEditModal(type, id) {
             const mov = allMovements.find(m => m.type === type && m.id === id);
             if (!mov) return;
 
             document.getElementById('mov-id').value = mov.id;
             document.getElementById('mov-type').value = mov.type;
-            document.getElementById('modal-title').innerText = type === 'income' ? 'Modifica Entrata' : 'Modifica Uscita';
+            document.getElementById('modal-title').innerText = type === 'income' ? '// MODIFICA ENTRATA' : '// MODIFICA USCITA';
             document.getElementById('category-group').style.display = type === 'income' ? 'none' : 'block';
             document.getElementById('mov-amount').value = parseFloat(mov.amount);
+            document.getElementById('mov-date').value = mov.effectiveDate || new Date().toISOString().slice(0, 10);
             if (type === 'expense' && mov.category) {
                 document.getElementById('mov-category').value = mov.category;
             }
@@ -431,69 +700,53 @@
             document.getElementById('movement-modal').classList.add('hidden');
         }
 
-        // SALVATAGGIO (CREAZIONE O MODIFICA)
         async function saveMovement(event) {
             event.preventDefault();
             const saveBtn = document.getElementById('save-btn');
             saveBtn.disabled = true;
-            saveBtn.innerText = 'Salvataggio...';
+            saveBtn.innerText = 'SYNC...';
 
             const id = document.getElementById('mov-id').value;
             const type = document.getElementById('mov-type').value;
             const amount = parseFloat(document.getElementById('mov-amount').value);
+            const dateVal = document.getElementById('mov-date').value;
             const note = document.getElementById('mov-note').value.trim();
             const category = type === 'income' ? 'Entrata' : document.getElementById('mov-category').value;
 
             const tableName = type === 'income' ? 'incomes' : 'expenses';
             const payload = type === 'income' 
-                ? { profile_id: currentProfile.id, title: note || 'Entrata', amount }
-                : { profile_id: currentProfile.id, amount, category, note };
+                ? { profile_id: currentProfile.id, title: note || 'Entrata', amount, income_date: dateVal }
+                : { profile_id: currentProfile.id, amount, category, note, expense_date: dateVal };
 
             let result;
             if (id) {
-                // Modifica movimento esistente
                 result = await supabaseClient.from(tableName).update(payload).eq('id', id);
             } else {
-                // Nuovo movimento
                 result = await supabaseClient.from(tableName).insert([payload]);
             }
 
             saveBtn.disabled = false;
-            saveBtn.innerText = 'Salva';
+            saveBtn.innerText = 'Registra';
 
             if (result.error) {
-                alert('Errore durante il salvataggio: ' + result.error.message);
-                console.error(result.error);
+                alert('Errore sistema: ' + result.error.message);
             } else {
                 closeModal();
                 await fetchMovements();
             }
         }
 
-        // ELIMINAZIONE MOVIMENTO
         async function deleteMovement(type, id) {
-            if (!confirm('Vuoi davvero eliminare questo movimento?')) return;
-
+            if (!confirm('Confermi la rimozione definitiva del record dal database?')) return;
             const tableName = type === 'income' ? 'incomes' : 'expenses';
             const { error } = await supabaseClient.from(tableName).delete().eq('id', id);
-
-            if (error) {
-                alert('Errore durante l\'eliminazione: ' + error.message);
-                console.error(error);
-            } else {
-                await fetchMovements();
-            }
+            if (error) alert('Errore: ' + error.message);
+            else await fetchMovements();
         }
 
-        // Funzione di sicurezza contro XSS
         function escapeHtml(str) {
             if (!str) return '';
-            return String(str)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         }
 
         initApp();
