@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart Wallet</title>
-    <!-- Tailwind CSS Play CDN (Stabile per produzione rapida) -->
+    <!-- Tailwind CSS Play CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -18,6 +18,14 @@
       %22theme_color%22: %22%234f46e5%22
     }">
     <meta name="theme-color" content="#4f46e5">
+    <script>
+        tailwind.config = { corePlugins: { preflight: true } }
+        const originalWarn = console.warn;
+        console.warn = function(...args) {
+            if (args[0] && typeof args[0] === 'string' && args[0].includes('tailwindcss.com should not be used in production')) return;
+            originalWarn.apply(console, args);
+        };
+    </script>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans antialiased min-h-screen flex flex-col justify-between">
 
@@ -151,8 +159,8 @@
     <!-- SCRIPT LOGICA E CONNESSIONE SUPABASE -->
     <script>
         // CONFIGURAZIONE SUPABASE (INSERISCI I TUOI DATI QUI)
-        const SUPABASE_URL = 'IL_TUO_SUPABASE_URL';
-        const SUPABASE_ANON_KEY = 'IL_TUO_SUPABASE_ANON_KEY';
+        const SUPABASE_URL = 'https://vrxzuwzjvluzdtbnrvfe.supabase.co/rest/v1/';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZyeHp1d3pqdmx1emR0Ym5ydmZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI0MTY5NTgsImV4cCI6MjEwNzk5Mjk1OH0._mNWpw3OM9fW_8xDfIqe-wob0j93ifHl9Qo8OTfSvpY';
         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
