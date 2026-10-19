@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestione Spese Smart</title>
-    <!-- Tailwind CSS per una grafica moderna e pulita -->
+    <title>Smart Wallet</title>
+    <!-- Tailwind CSS Play CDN (Stabile per produzione rapida) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- Manifest per PWA -->
     <link rel="manifest" href="data:application/json;charset=utf-8,{
-      'name': 'Gestione Spese',
-      'short_name': 'Spese',
-      'start_url': '.',
-      'display': 'standalone',
-      'background_color': '#f3f4f6',
-      'theme_color': '#4f46e5'
+      %22name%22: %22Smart Wallet%22,
+      %22short_name%22: %22Spese%22,
+      %22start_url%22: %22.%22,
+      %22display%22: %22standalone%22,
+      %22background_color%22: %22%23f3f4f6%22,
+      %22theme_color%22: %22%234f46e5%22
     }">
     <meta name="theme-color" content="#4f46e5">
 </head>
@@ -48,7 +48,7 @@
             </div>
         </div>
 
-        <!-- 2. DASHBOARD PRINCIPALE (Nascosta finché non si effettua il login) -->
+        <!-- 2. DASHBOARD PRINCIPALE -->
         <div id="dashboard-screen" class="hidden flex-1 flex flex-col pb-6">
             <!-- Header -->
             <div class="flex justify-between items-center mb-4 pt-2">
@@ -109,7 +109,7 @@
             </div>
         </div>
 
-        <!-- MODALE AGGIUNGI MOVIMENTO (Entrata / Uscita) -->
+        <!-- MODALE AGGIUNGI MOVIMENTO -->
         <div id="movement-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div class="bg-white rounded-2xl p-6 w-full max-w-xs shadow-xl">
                 <h3 id="modal-title" class="text-lg font-bold text-gray-800 mb-4">Nuovo Movimento</h3>
@@ -151,8 +151,8 @@
     <!-- SCRIPT LOGICA E CONNESSIONE SUPABASE -->
     <script>
         // CONFIGURAZIONE SUPABASE (INSERISCI I TUOI DATI QUI)
-        const SUPABASE_URL = 'https://vrxzuwzjvluzdtbnrvfe.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZyeHp1d3pqdmx1emR0Ym5ydmZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI0MTY5NTgsImV4cCI6MjEwNzk5Mjk1OH0._mNWpw3OM9fW_8xDfIqe-wob0j93ifHl9Qo8OTfSvpY';
+        const SUPABASE_URL = 'IL_TUO_SUPABASE_URL';
+        const SUPABASE_ANON_KEY = 'IL_TUO_SUPABASE_ANON_KEY';
         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -163,7 +163,6 @@
         const itemsPerPage = 10;
         let selectedProfileForPin = null;
 
-        // Inizializzazione app: carica i profili
         async function initApp() {
             const { data, error } = await supabaseClient.from('profiles').select('*').order('id');
             if (error) {
@@ -221,25 +220,16 @@
         }
 
         async function fetchMovements() {
-            // Recupera Entrate
             const { data: incomes } = await supabaseClient
                 .from('incomes')
                 .select('*')
                 .eq('profile_id', currentProfile.id);
 
-            // Recupera Uscite
-            const { data: expenses } unparsed = await supabaseClient
-                .from('expenses')
-                .select('*')
-                .eq('profile_id', currentProfile.id);
-
-            // Correggiamo la variabile in unparsed/expenses
             const { data: expensesData } = await supabaseClient
                 .from('expenses')
                 .select('*')
                 .eq('profile_id', currentProfile.id);
 
-            // Unifica i movimenti con etichetta tipo
             let list = [];
             if (incomes) {
                 incomes.forEach(i => list.push({ ...i, type: 'income', date: i.income_date, category: 'Entrata' }));
@@ -248,7 +238,6 @@
                 expensesData.forEach(e => list.push({ ...e, type: 'expense', date: e.expense_date }));
             }
 
-            // Ordina per data/creazione decrescente
             list.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
             allMovements = list;
             filteredMovements = list;
@@ -271,7 +260,6 @@
             const balance = totalIncome - totalExpense;
             document.getElementById('total-balance').innerText = `€ ${balance.toFixed(2)}`;
 
-            // Calcolo Previsione Liquidità
             const today = new Date();
             const currentDay = today.getDate();
             const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
@@ -284,7 +272,6 @@
             }
             document.getElementById('forecast-balance').innerText = `€ ${forecast.toFixed(2)}`;
 
-            // Generazione Consigli Smart (Box AI)
             let advice = "La situazione finanziaria è stabile. Continua così!";
             if (forecast < 0) {
                 advice = "Attenzione: la proiezione indica un saldo negativo a fine mese. Riduci le spese non essenziali!";
@@ -323,7 +310,6 @@
                 });
             }
 
-            // Paginazione bottoni
             document.getElementById('page-info').innerText = `Pagina ${currentPage}`;
             document.getElementById('prev-btn').disabled = currentPage === 1;
             document.getElementById('next-btn').disabled = end >= filteredMovements.length;
@@ -380,7 +366,6 @@
             }
         }
 
-        // Avvia caricamento profili all'avvio
         initApp();
     </script>
 </body>
